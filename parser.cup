@@ -1,0 +1,129 @@
+/* Simple +/-/* expression language; parser evaluates constant expressions on the fly*/
+/**
+ *  Package and Import Specifications
+ */
+import java_cup.runtime.*;
+
+/**
+ *  Usercode Components
+ */
+parser code {:
+    // Connect this parser to a scanner!
+    Scanner s;
+    Parser(Scanner s){ this.s=s; }
+:}
+
+init with {: System.out.println("arxi kostas"); :};
+
+/* define how to connect to the scanner! */
+scan with {: return s.next_token(); :};
+
+/**
+ *  Symbol Lists
+ */
+
+/* Terminals (tokens returned by the scanner). */
+// terminal            SEMI, PLUS, MINUS, TIMES, UMINUS, LPAREN, RPAREN;
+// terminal Integer    NUMBER;        // our scanner provides numbers as integers
+terminal IF, ELSE, PREFIX;
+terminal REVERSE, PLUS;
+terminal IDENTIFIER, LITERAL;
+terminal COMMA;
+
+/*  Non terminals */
+// non terminal            expr_list;
+// non terminal Integer    expr;      // used to store evaluated subexpressions
+
+// non terminal main, defs, calls;
+// non terminal exp;
+// non terminal cond_stmt, reverse, concat, call;
+// non terminal logical_expr;
+// non terminal def, params, rest_params;
+// non terminal call_params, rest_calls;
+
+non terminal def, params, rest_params;
+
+
+/**
+ *  Precedence Declarations
+ */
+// precedence left PLUS, MINUS;
+// precedence left TIMES;
+// precedence left UMINUS;
+
+/**
+ *  The Grammar Rules
+ */
+// expr_list ::= expr_list expr:e SEMI         {: System.out.println(e);:}
+//             | expr:e SEMI                   {: System.out.println(e);:}
+// ;
+// expr      ::= expr:e1 PLUS  expr:e2         {: RESULT = e1+e2;       :}
+//              | expr:e1 MINUS expr:e2        {: RESULT = e1-e2;       :}
+//              | expr:e1 TIMES expr:e2        {: RESULT = e1*e2;       :}
+//              | MINUS expr:e                 {: RESULT = -e;          :}
+//   	         %prec UMINUS
+//              | LPAREN expr:e RPAREN	        {: RESULT = e;           :}
+//              | NUMBER:n	                    {: RESULT = n;           :}
+//              ;
+
+// // main
+// main ::= defs calls {::}
+
+// // Definions
+// defs ::= def defs {::}
+// | /*empty*/ {::};
+
+// // Calls
+// calls ::= call calls {::}
+// | /*empty*/ {::};
+
+// // Expression
+// expr ::= cond_stmt {::}
+// | reverse {::}
+// | concat {::}
+// | call {::}
+// | IDENTIFIER {::}
+// | Literal {::}
+// ;
+
+// // condition statement
+// cond_stmt ::= IF (logical_expr) expr ELSE expr {::};
+
+// // Logical expression
+// logical_expr ::= expr PREFIX expr {::};
+
+// // reverse operator
+// reverse ::= REVERSE reverse {::}
+// | expr {::};
+
+// // concatenation operator
+// concat ::= expr PLUS expr rest_concat {::};
+// rest_concat ::= PLUS expr rest_concat {::};
+// | /*empty*/ {::};
+
+
+// // Definition of function
+// def ::= IDENTIFIER (params) {expr} {::};
+
+// Parameters at function's definition
+params ::= IDENTIFIER:e1 rest_params:e2 {:	System.out.printf("%s%s\n",e1,e2);:}
+| /*empty*/ {::}
+;
+
+rest_params ::= COMMA IDENTIFIER:e1 rest_params:e2 {:
+	if (e2 == null)
+		RESULT = "# "+ e1;
+	else
+		RESULT = "# "+ e1 + e2; 
+:}
+| /*empty*/ {::}
+;
+
+// // Call of function
+// call ::= IDENTIFIER (call_params) {::};
+
+// // Parameters at function's call
+// call_params ::= expr rest_calls
+// | /*empty*/ {::};
+// rest_calls ::= call rest_calls
+// | /*empty*/ {::};
