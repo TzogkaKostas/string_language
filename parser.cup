@@ -13,8 +13,6 @@ parser code {:
     Parser(Scanner s){ this.s=s; }
 :}
 
-init with {: System.out.println("arxi kostas"); :};
-
 /* define how to connect to the scanner! */
 scan with {: return s.next_token(); :};
 
@@ -23,107 +21,165 @@ scan with {: return s.next_token(); :};
  */
 
 /* Terminals (tokens returned by the scanner). */
-// terminal            SEMI, PLUS, MINUS, TIMES, UMINUS, LPAREN, RPAREN;
-// terminal Integer    NUMBER;        // our scanner provides numbers as integers
-terminal IF, ELSE, PREFIX;
+terminal IF, ELSE, LPAREN, RPAREN, PREFIX;
 terminal REVERSE, PLUS;
-terminal IDENTIFIER, LITERAL;
-terminal COMMA;
+terminal IDENTIFIER;
+terminal String STRING_LITERAL;
+terminal COMMA, LBRACKET, RBRACKET;
 
 /*  Non terminals */
-// non terminal            expr_list;
-// non terminal Integer    expr;      // used to store evaluated subexpressions
-
-// non terminal main, defs, calls;
-// non terminal exp;
-// non terminal cond_stmt, reverse, concat, call;
-// non terminal logical_expr;
-// non terminal def, params, rest_params;
-// non terminal call_params, rest_calls;
-
-non terminal def, params, rest_params;
-
+// non terminal main, lines;
+non terminal main, lines, line, line2, line3, body, end_line, statements;
+non terminal expr, expr_no_id, cond_stmt, reverse, concat, call, args, rest_args;
+non terminal logical_expr;
 
 /**
  *  Precedence Declarations
  */
-// precedence left PLUS, MINUS;
-// precedence left TIMES;
-// precedence left UMINUS;
+precedence left PREFIX;
+precedence left PLUS;
+precedence left REVERSE;
+// precedence left IDENTIFIER;
+
 
 /**
  *  The Grammar Rules
  */
-// expr_list ::= expr_list expr:e SEMI         {: System.out.println(e);:}
-//             | expr:e SEMI                   {: System.out.println(e);:}
-// ;
-// expr      ::= expr:e1 PLUS  expr:e2         {: RESULT = e1+e2;       :}
-//              | expr:e1 MINUS expr:e2        {: RESULT = e1-e2;       :}
-//              | expr:e1 TIMES expr:e2        {: RESULT = e1*e2;       :}
-//              | MINUS expr:e                 {: RESULT = -e;          :}
-//   	         %prec UMINUS
-//              | LPAREN expr:e RPAREN	        {: RESULT = e;           :}
-//              | NUMBER:n	                    {: RESULT = n;           :}
-//              ;
 
-// // main
-// main ::= defs calls {::}
+start with main;
 
-// // Definions
-// defs ::= def defs {::}
-// | /*empty*/ {::};
+main ::= lines:e {:
+    //System.out.printf("-%s-\n", e);
+:};
 
-// // Calls
-// calls ::= call calls {::}
-// | /*empty*/ {::};
+lines ::= line:e1 lines:e2  {:
+    // System.out.println("public class Main { public static void main(String[] args) {");
+    // System.out.println("}");
+    RESULT = "-" + e1 + e2 + "- ";
+    // System.out.printf("-%s-\n", e1);
 
-// // Expression
-// expr ::= cond_stmt {::}
-// | reverse {::}
-// | concat {::}
-// | call {::}
-// | IDENTIFIER {::}
-// | Literal {::}
-// ;
-
-// // condition statement
-// cond_stmt ::= IF (logical_expr) expr ELSE expr {::};
-
-// // Logical expression
-// logical_expr ::= expr PREFIX expr {::};
-
-// // reverse operator
-// reverse ::= REVERSE reverse {::}
-// | expr {::};
-
-// // concatenation operator
-// concat ::= expr PLUS expr rest_concat {::};
-// rest_concat ::= PLUS expr rest_concat {::};
-// | /*empty*/ {::};
-
-
-// // Definition of function
-// def ::= IDENTIFIER (params) {expr} {::};
-
-// Parameters at function's definition
-params ::= IDENTIFIER:e1 rest_params:e2 {:	System.out.printf("%s%s\n",e1,e2);:}
-| /*empty*/ {::}
-;
-
-rest_params ::= COMMA IDENTIFIER:e1 rest_params:e2 {:
-	if (e2 == null)
-		RESULT = "# "+ e1;
-	else
-		RESULT = "# "+ e1 + e2; 
 :}
-| /*empty*/ {::}
-;
+| /*empty*/ {:RESULT = ""; :};
 
-// // Call of function
-// call ::= IDENTIFIER (call_params) {::};
+line ::= IDENTIFIER:e1 LPAREN line2:e2 {: 
+    RESULT = e1 + "(" + e2;
+    System.out.printf("-%s-\n", RESULT);
+:}
+| expr_no_id:e1 {:
+    RESULT = e1;
+    System.out.printf("-%s-\n", RESULT);
+:};
 
-// // Parameters at function's call
-// call_params ::= expr rest_calls
-// | /*empty*/ {::};
-// rest_calls ::= call rest_calls
-// | /*empty*/ {::};
+line2 ::= RPAREN body:e {: 
+    RESULT = ")" + e;
+:}
+| LPAREN args:e1 RPAREN end_line:e2 {:
+    RESULT = "(" + e1 + ")" + e2; 
+:}
+| LPAREN args:e1 RPAREN PLUS expr:e2 end_line:e3 {:
+    RESULT = "(" + e1 + ")" + "+" + e2 + e3; 
+:}
+| PLUS expr:e1 end_line:e2{:
+    RESULT = "+" + e1 + e2; 
+:}
+| expr_no_id:e1 end_line:e2 {:
+    RESULT = e1.toString() + e2.toString(); 
+:}
+| IDENTIFIER line3:e {:
+    RESULT = e; 
+:};
+
+line3 ::= COMMA IDENTIFIER:e1 line3:e2 {: 
+    RESULT = ", " + e1 + e2;
+:}
+| LPAREN args:e1 RPAREN end_line:e2 {:
+    RESULT = "(" + e1 + ")" + e2; 
+:}
+| LPAREN args:e1 RPAREN PLUS expr:e2 end_line:e3 {:
+    RESULT = "(" + e1 + ")" + "+" + e2 + e3; 
+:}
+| PLUS expr:e1 end_line:e2{:
+    RESULT = "+" + e1 + e2; 
+:}
+| expr_no_id:e1 end_line:e2 {:
+    RESULT = e1.toString() + e2.toString(); 
+:}
+| RPAREN body:e {:
+    RESULT = ")" + e;
+:};
+
+body ::= LBRACKET expr:e1 RBRACKET {: 
+    RESULT = "{" + e1 + "}";
+:}
+| /*empty*/ {:RESULT = ""; :};
+
+end_line ::= RPAREN:e1 {: 
+    RESULT = ")" + e1;
+:}
+| COMMA expr:e1 end_line:e2 {:
+    RESULT = ", " + e1 + e2; 
+:};
+
+// statements ::= expr:e1 statements:e2 {:
+//     RESULT = e1.toString() + e2.toString();
+//     System.out.printf("-%s-\n", RESULT);
+// :}
+// | /*empty*/ {:
+//     RESULT = ""; 
+// :};
+
+
+
+// Expression WITH idientifiers
+expr ::= reverse:e {:RESULT = e;:}
+| concat:e {:RESULT = e;:}
+| cond_stmt:e {:RESULT = e;:}
+| call:e {:RESULT = e;:}
+| IDENTIFIER:e {:RESULT = e;:}
+| STRING_LITERAL:e {:RESULT = "\"" + e + "\"" + ";"; :};
+
+// condition statement
+cond_stmt ::= IF LPAREN logical_expr:e1 RPAREN expr:e2 ELSE expr:e3 {:
+    RESULT = e1 + " ? " + e2 + " : " + e3;
+:};
+
+// Logical expression
+logical_expr ::= expr:e1 PREFIX expr:e2 {:
+    RESULT = e1 + ".startsWith(" + e2 + ")";
+:};
+
+// reverse operator
+reverse ::= REVERSE expr:e {:
+    RESULT = "new StringBuilder(" + e + ").reverse().toString()";
+:};
+
+// concatenation operator
+concat ::= expr:e1 PLUS expr:e2 {:RESULT = e1 + "+" + e2; :};
+
+// Function call
+call ::= IDENTIFIER:e1 LPAREN args:e2 RPAREN {:
+    RESULT = e1 + "(" + e2 + ")";
+:};
+
+// Arguments of functions' call (zero or more)
+args ::= expr:e1 rest_args:e2 {:
+    RESULT = e1.toString() + e2.toString();
+:}
+| /*empty*/ {:
+    RESULT = ""; 
+:};
+
+rest_args ::= COMMA expr:e1 rest_args:e2 {:
+    RESULT = ", " + e1 + e2;
+:}
+| /*empty*/ {:
+    RESULT = "";
+:};
+
+
+// Expression WITHOUT idientifiers
+expr_no_id ::= reverse:e {:RESULT = e; :}
+// | concat_no_id:e {:RESULT = "return " + e + ";";:}
+| cond_stmt:e {:RESULT = e; :}
+// | call_no_id:e {:RESULT = "return " + e + ";";:}
+| STRING_LITERAL:e {: System.out.printf("kostasddd\n"); RESULT = "\"" + e + "\""; :};
