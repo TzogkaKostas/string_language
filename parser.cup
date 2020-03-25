@@ -16,7 +16,7 @@ parser code {:
     Parser(Scanner s){ this.s=s; }
 :}
 
-init with {: System.out.printf("public class Main {\n");:}
+init with {: System.out.printf("public class Output {\n");:}
 
 /* define how to connect to the scanner! */
 scan with {: return s.next_token(); :};
@@ -62,16 +62,20 @@ start with main;
 
 
 main ::= lines:e {:
-	System.out.printf("\t}\n}\n", e);
+	System.out.printf("\t}\n}\n");
 :};
 
 
 lines ::= lines:e2 line:e1 {:
-    RESULT = "" + e1 + e2;
+    RESULT = "" + e2 + e1;
 	if (flag == 1) {
 		String str = e1.toString();
-		String name = str.substring(0, str.lastIndexOf('(') );
-		String func_body = "{" + str.substring(str.lastIndexOf('{')+1);
+	 	// System.out.printf("str:%s\n", str);
+	 	// System.out.printf("%s\n", RESULT);
+	 	// System.out.printf("%s\n", params);
+		String name = str.substring(0, str.indexOf('(') );
+		String func_body = str.substring(str.indexOf('{'));
+		// System.out.printf("name:%s\n", name);
 		System.out.printf("\tpublic static String %s(%s) %s\n", name, params, func_body);
 		flag = 0;
 		params = "";
@@ -181,7 +185,7 @@ rest_args ::= COMMA expr:e1 rest_args:e2 {:
 
 /* condition statement */
 cond_stmt ::= IF LPAREN logical_expr:e1 RPAREN expr:e2 ELSE expr:e3 {:
-    RESULT = e1 + " ? " + e2 + " : " + e3;
+    RESULT = "(" + e1 + ")" + " ? " + "(" + e2 + ")" + " : " + "(" + e3 + ")";
 :};
 
 /* Logical expression */

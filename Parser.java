@@ -215,7 +215,7 @@ public class Parser extends java_cup.runtime.lr_parser {
   /** User initialization code. */
   public void user_init() throws java.lang.Exception
     {
- System.out.printf("public class Main {\n");
+ System.out.printf("public class Output {\n");
     }
 
   /** Scan to get the next Symbol. */
@@ -280,7 +280,7 @@ class CUP$Parser$actions {
 		int eright = ((java_cup.runtime.Symbol)CUP$Parser$stack.peek()).right;
 		Object e = (Object)((java_cup.runtime.Symbol) CUP$Parser$stack.peek()).value;
 		
-	System.out.printf("\t}\n}\n", e);
+	System.out.printf("\t}\n}\n");
 
               CUP$Parser$result = parser.getSymbolFactory().newSymbol("main",0, ((java_cup.runtime.Symbol)CUP$Parser$stack.peek()), ((java_cup.runtime.Symbol)CUP$Parser$stack.peek()), RESULT);
             }
@@ -297,11 +297,15 @@ class CUP$Parser$actions {
 		int e1right = ((java_cup.runtime.Symbol)CUP$Parser$stack.peek()).right;
 		Object e1 = (Object)((java_cup.runtime.Symbol) CUP$Parser$stack.peek()).value;
 		
-    RESULT = "" + e1 + e2;
+    RESULT = "" + e2 + e1;
 	if (flag == 1) {
 		String str = e1.toString();
-		String name = str.substring(0, str.lastIndexOf('(') );
-		String func_body = "{" + str.substring(str.lastIndexOf('{')+1);
+	 	// System.out.printf("str:%s\n", str);
+	 	// System.out.printf("%s\n", RESULT);
+	 	// System.out.printf("%s\n", params);
+		String name = str.substring(0, str.indexOf('(') );
+		String func_body = str.substring(str.indexOf('{'));
+		// System.out.printf("name:%s\n", name);
 		System.out.printf("\tpublic static String %s(%s) %s\n", name, params, func_body);
 		flag = 0;
 		params = "";
@@ -779,7 +783,7 @@ class CUP$Parser$actions {
 		int e3right = ((java_cup.runtime.Symbol)CUP$Parser$stack.peek()).right;
 		Object e3 = (Object)((java_cup.runtime.Symbol) CUP$Parser$stack.peek()).value;
 		
-    RESULT = e1 + " ? " + e2 + " : " + e3;
+    RESULT = "(" + e1 + ")" + " ? " + "(" + e2 + ")" + " : " + "(" + e3 + ")";
 
               CUP$Parser$result = parser.getSymbolFactory().newSymbol("cond_stmt",17, ((java_cup.runtime.Symbol)CUP$Parser$stack.elementAt(CUP$Parser$top-6)), ((java_cup.runtime.Symbol)CUP$Parser$stack.peek()), RESULT);
             }

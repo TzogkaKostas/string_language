@@ -1,6 +1,19 @@
-call(x, y, z) {"dasdsa"}
-call(x, y, z) {"dasdsa"}
-call(x, y, z) {"dasdsa"}
-"aaa" + call(x, y, z)
-reverse x + "dsd"
-call(if ("aa" prefix "bb") x+x else call())
+    findLangType(langName) {
+        if ("Java" prefix langName)
+            if(langName prefix "Java")
+                "Static"
+            else
+                if(reverse "script" prefix reverse langName)
+                    "Dynamic"
+                else
+                    reverse "Unknown" + x + call()
+        else
+            if (reverse "script" prefix reverse langName)
+                "Probably Dynamic"
+            else
+                "Unknown"
+    }
+
+    findLangType("Java")
+    findLangType("Javascript")
+    findLangType("Typescript")
