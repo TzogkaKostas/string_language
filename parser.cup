@@ -9,9 +9,14 @@ import java_cup.runtime.*;
  */
 parser code {:
     // Connect this parser to a scanner!
+	int flag;
+	String params = "";
+	boolean printed = false;
     Scanner s;
     Parser(Scanner s){ this.s=s; }
 :}
+
+init with {: System.out.printf("public class Main {\n");:}
 
 /* define how to connect to the scanner! */
 scan with {: return s.next_token(); :};
@@ -29,9 +34,16 @@ terminal COMMA, LBRACKET, RBRACKET;
 
 /*  Non terminals */
 // non terminal main, lines;
-non terminal main, lines, line, line2, line3, body, end_line, statements;
-non terminal expr, expr_no_id, cond_stmt, reverse, concat, call, args, rest_args;
-non terminal logical_expr;
+// non terminal main, lines, line, line2, line3, body, end_line, statements;
+// non terminal expr, expr_no_id, cond_stmt, reverse, concat, rest_concat, call, args, rest_args;
+// non terminal logical_expr;
+non terminal main, lines, line, line2, line3, end_line;
+non terminal body, rest_concat;
+
+non terminal expr_id, expr_no_id, term_id, term_no_id;
+non terminal expr, term, reverse, reverse_ops, atom;
+non terminal cond_stmt, logical_expr;
+non terminal args, rest_args;
 
 /**
  *  Precedence Declarations
@@ -48,55 +60,58 @@ precedence left REVERSE;
 
 start with main;
 
+
 main ::= lines:e {:
-    //System.out.printf("-%s-\n", e);
+	System.out.printf("\t}\n}\n", e);
 :};
 
-lines ::= line:e1 lines:e2  {:
-    // System.out.println("public class Main { public static void main(String[] args) {");
-    // System.out.println("}");
-    RESULT = "-" + e1 + e2 + "- ";
-    // System.out.printf("-%s-\n", e1);
 
+lines ::= lines:e2 line:e1 {:
+    RESULT = "" + e1 + e2;
+	if (flag == 1) {
+		String str = e1.toString();
+		String name = str.substring(0, str.lastIndexOf('(') );
+		String func_body = "{" + str.substring(str.lastIndexOf('{')+1);
+		System.out.printf("\tpublic static String %s(%s) %s\n", name, params, func_body);
+		flag = 0;
+		params = "";
+	}
+	else {
+		if (printed == false) {
+	 		System.out.printf("\n\tpublic static void main(String[] args) {\n");
+			printed = true;
+		}
+		System.out.printf("\t\tSystem.out.println(" + e1 + ");\n", e1);
+	}
 :}
 | /*empty*/ {:RESULT = ""; :};
 
+
+
 line ::= IDENTIFIER:e1 LPAREN line2:e2 {: 
     RESULT = e1 + "(" + e2;
-    System.out.printf("-%s-\n", RESULT);
 :}
-| expr_no_id:e1 {:
-    RESULT = e1;
-    System.out.printf("-%s-\n", RESULT);
+| expr_no_id:e {:
+    RESULT = e;
 :};
 
-line2 ::= RPAREN body:e {: 
-    RESULT = ")" + e;
-:}
-| LPAREN args:e1 RPAREN end_line:e2 {:
-    RESULT = "(" + e1 + ")" + e2; 
-:}
-| LPAREN args:e1 RPAREN PLUS expr:e2 end_line:e3 {:
-    RESULT = "(" + e1 + ")" + "+" + e2 + e3; 
-:}
-| PLUS expr:e1 end_line:e2{:
-    RESULT = "+" + e1 + e2; 
+line2 ::= RPAREN body:e {:
+    RESULT = ") " + e;
 :}
 | expr_no_id:e1 end_line:e2 {:
     RESULT = e1.toString() + e2.toString(); 
 :}
-| IDENTIFIER line3:e {:
-    RESULT = e; 
+| IDENTIFIER:e1 line3:e2 {:
+    RESULT = "" + e1 + e2; 
+	params = "String " + e1 + params;
 :};
 
 line3 ::= COMMA IDENTIFIER:e1 line3:e2 {: 
     RESULT = ", " + e1 + e2;
+	params = ", String " + e1 + params;
 :}
-| LPAREN args:e1 RPAREN end_line:e2 {:
-    RESULT = "(" + e1 + ")" + e2; 
-:}
-| LPAREN args:e1 RPAREN PLUS expr:e2 end_line:e3 {:
-    RESULT = "(" + e1 + ")" + "+" + e2 + e3; 
+| LPAREN args:e1 RPAREN rest_concat:e2 end_line:e3 {:
+    RESULT = "(" + e1 + ")" + e2 + e3; 
 :}
 | PLUS expr:e1 end_line:e2{:
     RESULT = "+" + e1 + e2; 
@@ -108,78 +123,86 @@ line3 ::= COMMA IDENTIFIER:e1 line3:e2 {:
     RESULT = ")" + e;
 :};
 
-body ::= LBRACKET expr:e1 RBRACKET {: 
-    RESULT = "{" + e1 + "}";
-:}
-| /*empty*/ {:RESULT = ""; :};
 
-end_line ::= RPAREN:e1 {: 
-    RESULT = ")" + e1;
+end_line ::= RPAREN {:
+    RESULT = ")";
 :}
 | COMMA expr:e1 end_line:e2 {:
     RESULT = ", " + e1 + e2; 
 :};
 
-// statements ::= expr:e1 statements:e2 {:
-//     RESULT = e1.toString() + e2.toString();
-//     System.out.printf("-%s-\n", RESULT);
-// :}
-// | /*empty*/ {:
-//     RESULT = ""; 
-// :};
+body ::= LBRACKET expr:e1 RBRACKET {: 
+    RESULT = "{" + "return " + e1 + ";}";
+	flag = 1;
+:} | /*empty*/ {:
+	RESULT = "";
+	flag = 0;
+:};
+
+rest_concat ::= PLUS expr:e {:RESULT = " + " + e;:}
+| /*empty*/ {:RESULT = "";:};
 
 
+/* Expressions */
+expr ::= term:e {:RESULT = e;:}
+| term:e1 PLUS expr:e2 {:RESULT = e1 + " + " + e2;:};
 
-// Expression WITH idientifiers
-expr ::= reverse:e {:RESULT = e;:}
-| concat:e {:RESULT = e;:}
-| cond_stmt:e {:RESULT = e;:}
-| call:e {:RESULT = e;:}
-| IDENTIFIER:e {:RESULT = e;:}
-| STRING_LITERAL:e {:RESULT = "\"" + e + "\"" + ";"; :};
+term ::= reverse:e {:RESULT = e;:}
+| atom:e {: RESULT = e;:};
 
-// condition statement
+atom ::= IDENTIFIER:e {:RESULT = e;:}
+| STRING_LITERAL:e {:RESULT = "\"" + e + "\"";:}
+| IDENTIFIER:e1 LPAREN args:e2 RPAREN {:RESULT = e1 + "(" + e2 + ")";:}
+| cond_stmt:e {:RESULT = e;:};
+
+
+/* reverse operator */
+reverse ::= REVERSE reverse_ops:e1 atom:e2 {:
+	String str = "new StringBuilder(" + e2 + ").reverse().toString()";
+	for (int i=0; i<(int)e1; i++) {
+		str = "new StringBuilder(" + str + ").reverse().toString()";
+	}
+    RESULT = str;
+:};
+
+reverse_ops ::= REVERSE reverse_ops :e {:RESULT = (int)e + 1;:}
+| /*empty*/ {:RESULT = 0;:};
+
+
+/* Arguments of functions' call (zero or more) */
+args ::= expr:e1 rest_args:e2 {:
+    RESULT = e1.toString() + e2.toString();
+:} | /*empty*/ {: RESULT = "";  :};
+
+rest_args ::= COMMA expr:e1 rest_args:e2 {:
+    RESULT = ", " + e1 + e2;
+:} | /*empty*/ {: RESULT = ""; :};
+
+
+/* condition statement */
 cond_stmt ::= IF LPAREN logical_expr:e1 RPAREN expr:e2 ELSE expr:e3 {:
     RESULT = e1 + " ? " + e2 + " : " + e3;
 :};
 
-// Logical expression
+/* Logical expression */
 logical_expr ::= expr:e1 PREFIX expr:e2 {:
     RESULT = e1 + ".startsWith(" + e2 + ")";
 :};
 
-// reverse operator
-reverse ::= REVERSE expr:e {:
-    RESULT = "new StringBuilder(" + e + ").reverse().toString()";
-:};
 
-// concatenation operator
-concat ::= expr:e1 PLUS expr:e2 {:RESULT = e1 + "+" + e2; :};
+/* Expressions except expression starting with id */
+expr_no_id ::= term_no_id:e1 {:RESULT = e1.toString();:}
+| term_no_id:e1 PLUS expr:e2 {:RESULT = e1 + " + " + e2;:};
 
-// Function call
-call ::= IDENTIFIER:e1 LPAREN args:e2 RPAREN {:
-    RESULT = e1 + "(" + e2 + ")";
-:};
+term_no_id ::= reverse:e {:RESULT = e;:}
+| STRING_LITERAL:e {:RESULT = "\"" + e + "\"";:}
+| cond_stmt:e {:RESULT = e;:};
 
-// Arguments of functions' call (zero or more)
-args ::= expr:e1 rest_args:e2 {:
-    RESULT = e1.toString() + e2.toString();
-:}
-| /*empty*/ {:
-    RESULT = ""; 
-:};
+/* Expressions without id */
+/*
+expr_id ::= term_id:e1 {:RESULT = e1;:}
+| term_id:e1 PLUS expr:e2 {:RESULT = e1 + "+" + e2;:};
 
-rest_args ::= COMMA expr:e1 rest_args:e2 {:
-    RESULT = ", " + e1 + e2;
-:}
-| /*empty*/ {:
-    RESULT = "";
-:};
-
-
-// Expression WITHOUT idientifiers
-expr_no_id ::= reverse:e {:RESULT = e; :}
-// | concat_no_id:e {:RESULT = "return " + e + ";";:}
-| cond_stmt:e {:RESULT = e; :}
-// | call_no_id:e {:RESULT = "return " + e + ";";:}
-| STRING_LITERAL:e {: System.out.printf("kostasddd\n"); RESULT = "\"" + e + "\""; :};
+term_id ::= IDENTIFIER:e {:RESULT = e.toString();:}
+| IDENTIFIER:e1 LPAREN args:e2 RPAREN {:RESULT = e1 + "(" + e2 + ")";:};
+*/

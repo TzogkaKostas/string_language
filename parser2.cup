@@ -1,0 +1,381 @@
+
+
+/* Simple +/-/* expression language; parser evaluates constant expressions on the fly*/
+
+// Package and Import Specifications
+
+import java_cup.runtime.*;
+
+// Usercode Components
+
+parser code {:
+    Scanner s;
+    Parser(Scanner s){ this.s=s; }
+:}
+
+// init with {:  :};
+
+// define how to connect to the scanner!
+scan with {: return s.next_token(); :};
+
+// Symbol Lists
+
+// // Terminals (tokens returned by the scanner).
+// terminal IF, ELSE, LPAREN, RPAREN, PREFIX;
+// terminal REVERSE, PLUS;
+// terminal IDENTIFIER;
+// terminal String STRING_LITERAL;
+// terminal COMMA, LBRACKET, RBRACKET;
+
+// // Non terminals
+// non terminal main, lines, line, args, rest_args, params1, rest_params, A, B, A2;
+// non terminal expr, cond_stmt, reverse, concat, call;
+// non terminal expr_no_id, cond_stmt_no_id, reverse_no_id, concat_no_id, call_no_id;
+// non terminal logical_expr;
+// non terminal logical_expr_no_id;
+
+// // Precedence Declarations
+// precedence left PREFIX;
+// precedence left PLUS;
+// precedence left REVERSE;
+// precedence left IDENTIFIER;
+
+// The Grammar Rules
+
+// start with main;
+
+// main ::= lines {:
+    
+// :}
+// | /*empty*/ {:RESULT = ""; :};
+
+// lines ::= line:e1 lines:e2 {:
+//     System.out.println("public class Main { public static void main(String[] args) {");
+//     System.out.printf("%s%s-\n", e1, e2);
+//     System.out.println("}");
+// :}
+// | /*empty*/ {:RESULT = ""; :};
+
+// line ::= IDENTIFIER:e1 LPAREN A:e2 {: RESULT = e1 + "(" + e2; :}
+// | /*empty*/ {:RESULT = ""; :};
+
+// A ::= RPAREN B:e {: 
+//     RESULT = ")" + e;
+// :}
+// | params1:e1 A2:e2 {:
+//     RESULT = e1 + e2; 
+// :}
+// | expr_no_id:e1 rest_args:e2 {:
+//     RESULT = e1 + e2; 
+// :};
+
+// B ::= LBRACKET expr:e RBRACKET {: 
+//     RESULT = "{" + e + "}";
+// :}
+// | /*empty*/ {:RESULT = ""; :};
+
+// A2 ::= RPAREN B:e {: 
+//     RESULT = ")" + e;
+// :}
+// | COMMA expr_no_id:e1 rest_args:e2 {:
+//     RESULT = "," e1 + e2;
+// :};
+
+
+// // Arguments of functions' call (zero or more)
+// args ::= expr:e1 rest_args:e2 {:
+//     RESULT = e1.toString() + e2.toString();
+// :}
+// | /*empty*/ {:
+//     RESULT = ""; 
+// :};
+
+// rest_args ::= COMMA expr:e1 rest_args:e2 {:
+//     RESULT = ", " + e1 + e2;
+// :}
+// | /*empty*/ {:
+//     RESULT = "";
+// :};
+
+
+// // Parameters of functions' definition (at least one)
+// params1 ::= IDENTIFIER:e1 rest_params:e2 {:
+//     RESULT = e1.toString() + e2.toString();
+// :};
+
+// rest_params ::= COMMA IDENTIFIER:e1 rest_params:e2 {:
+//     RESULT = ", " + e1 + e2;
+// :}
+// | /*empty*/ {:
+//     RESULT = "";
+// :};
+
+
+// // Expression WITH idientifiers
+// expr ::= reverse:e {:RESULT = "return " + e + ";";:}
+// | concat:e {:RESULT = "return " + e + ";";:}
+// | cond_stmt:e {:RESULT = "return " + e + ";";:}
+// | call:e {:RESULT = "return " + e + ";";:}
+// | IDENTIFIER:e {:RESULT = "return " + e + ";";:}
+// | STRING_LITERAL:e {:RESULT = "return " + "\"" + e + "\"" + ";"; :};
+
+// // condition statement
+// cond_stmt ::= IF LPAREN logical_expr:e1 RPAREN expr:e2 ELSE expr:e3 {:
+//     RESULT = e1 + " ? " + e2 + " : " + e3;
+// :};
+
+// // Logical expression
+// logical_expr ::= expr:e1 PREFIX expr:e2 {:
+//     RESULT = e1 + ".startsWith(" + e2 + ")";
+// :};
+
+// // reverse operator
+// reverse ::= REVERSE expr:e {:
+//     RESULT = "new StringBuilder(" + e + ").reverse().toString()";
+// :};
+
+// // concatenation operator
+// concat ::= expr:e1 PLUS expr:e2 {:RESULT = e1 + "+" + e2; :};
+
+
+// // Expression WITHOUT idientifiers
+// expr_no_id ::= reverse_no_id:e {:RESULT = "return " + e + ";";:}
+// | concat_no_id:e {:RESULT = "return " + e + ";";:}
+// | cond_stmt_no_id:e {:RESULT = "return " + e + ";";:}
+// | call_no_id:e {:RESULT = "return " + e + ";";:}
+// | STRING_LITERAL:e {:RESULT = "return " + "\"" + e + "\"" + ";"; :};
+
+// // condition statement
+// cond_stmt_no_id ::= IF LPAREN logical_expr_no_id:e1 RPAREN expr_no_id:e2 ELSE expr_no_id:e3 {:
+//     RESULT = e1 + " ? " + e2 + " : " + e3;
+// :};
+
+// // Logical expression
+// logical_expr_no_id ::= expr_no_id:e1 PREFIX expr_no_id:e2 {:
+//     RESULT = e1 + ".startsWith(" + e2 + ")";
+// :};
+
+// // reverse operator
+// reverse_no_id ::= REVERSE expr_no_id:e {:
+//     RESULT = "my_reverse(" + e + ")";
+//     RESULT = "new StringBuilder(" + e + ").reverse().toString()";
+// :};
+
+// // concatenation operator
+// concat_no_id ::= expr_no_id:e1 PLUS expr_no_id:e2 {:RESULT = e1 + "+" + e2; :};
+
+
+
+
+
+
+// lines ::= line:e1 lines:e2 {:
+//     System.out.println("public class Main { public static void main(String[] args) {");
+//     System.out.printf("%s%s-\n", e1, e2);
+//     System.out.println("}");
+// :}
+// | /*empty*/ {:RESULT = ""; :};
+
+// // Each 'line' of the program
+// line ::= head:e1 line2:e2 {:
+//     RESULT =  e1.toString() + e2.toString();
+//     if ("".equals(e2))
+//         RESULT = "System.out.println(" + e1 +");";
+//     else
+//         RESULT = "public static String " + e1 + " " + e2;
+// :};
+
+// line2 ::= LBRACKET expr:e RBRACKET {:
+//     RESULT = "{" + e + "}";
+// :}
+// | calls:e {:
+//     RESULT = e;
+// :};
+
+// // Head of function
+// head ::= IDENTIFIER:e1 LPAREN args:e2 RPAREN {:
+//     RESULT = e1 + "(" + e2 + ")";
+// :};
+
+// // Arguments of functions' call
+// args ::= expr:e1 rest_args:e2 {:
+//     RESULT = e1.toString() + e2.toString();
+// :}
+// | /*empty*/ {:
+//     RESULT = ""; 
+// :};
+
+// rest_args ::= COMMA expr:e1 rest_args:e2 {:
+//     RESULT = ", " + e1 + e2;
+// :}
+// | /*empty*/ {:
+//     RESULT = "";
+// :};
+
+// // Calls
+// calls ::= head:e1 calls:e2 {:
+//     RESULT = e1.toString() + e2.toString();
+// :}
+// | /*empty*/ {:
+//     RESULT = "";
+// :};
+
+// ############################################################################
+
+
+
+// main ::= IDENTIFIER:e1 LPAREN RPAREN body:e2 {:
+//     RESULT = e1 + "()" + e2;
+//     System.out.printf("-%s-\n", RESULT);
+// :};
+// // | IDENTIFIER:e1 LPAREN RPAREN EOF{:
+//     // RESULT = e1 + "()";
+//     // System.out.printf("-%s-\n", RESULT);
+// // :};
+
+
+
+
+// lines ::= line:e1 lines:e2  {:
+//     // System.out.println("public class Main { public static void main(String[] args) {");
+//     // System.out.println("}");
+//     RESULT = "-" + e1 + e2 + "- ";
+//     // System.out.printf("-%s-\n", e1);
+
+// :}
+// | /*empty*/ {:RESULT = ""; :};
+
+// line ::= IDENTIFIER:e1 LPAREN line2:e2 {: 
+//     RESULT = e1 + "(" + e2;
+//     System.out.printf("-%s-\n", RESULT);
+// :}
+// | expr_no_id:e1 {:
+//     RESULT = e1;
+//     System.out.printf("-%s-\n", RESULT);
+// :};
+
+line2 ::= RPAREN body:e {: 
+    RESULT = ")" + e;
+:}
+| LPAREN args:e1 RPAREN rest_concat end_line:e2 {:
+    RESULT = "(" + e1 + ")" + e2; 
+:}
+// // | LPAREN args:e1 RPAREN PLUS expr:e2 end_line:e3 {:
+//     // RESULT = "(" + e1 + ")" + "+" + e2 + e3; 
+// // :}
+// | PLUS expr:e1 end_line:e2{:
+//     RESULT = "+" + e1 + e2; 
+// :}
+// | expr_no_id:e1 end_line:e2 {:
+//     RESULT = e1.toString() + e2.toString(); 
+// :}
+// | IDENTIFIER line3:e {:
+//     RESULT = e; 
+// :};
+
+// line3 ::= COMMA IDENTIFIER:e1 line3:e2 {: 
+//     RESULT = ", " + e1 + e2;
+// :}
+// | LPAREN args:e1 RPAREN end_line:e2 {:
+//     RESULT = "(" + e1 + ")" + e2; 
+// :}
+// | LPAREN args:e1 RPAREN PLUS expr:e2 end_line:e3 {:
+//     RESULT = "(" + e1 + ")" + "+" + e2 + e3; 
+// :}
+// | PLUS expr:e1 end_line:e2{:
+//     RESULT = "+" + e1 + e2; 
+// :}
+// | expr_no_id:e1 end_line:e2 {:
+//     RESULT = e1.toString() + e2.toString(); 
+// :}
+// | RPAREN body:e {:
+//     RESULT = ")" + e;
+// :};
+
+// body ::= LBRACKET expr:e1 RBRACKET {: 
+//     RESULT = "{" + e1 + "}";
+// :}
+// | /*empty*/ {:RESULT = ""; :};
+
+// end_line ::= RPAREN:e1 rest_concat:e2 {: 
+//     RESULT = ")" + e1 + e2;
+// :}
+// | COMMA expr:e1 end_line:e2 rest_concat:e3 {:
+//     RESULT = ", " + e1 + e2 + e3; 
+// :};
+
+// // statements ::= expr:e1 statements:e2 {:
+// //     RESULT = e1.toString() + e2.toString();
+// //     System.out.printf("-%s-\n", RESULT);
+// // :}
+// // | /*empty*/ {:
+// //     RESULT = ""; 
+// // :};
+
+
+
+// // Expression WITH idientifiers
+// expr ::= reverse:e1 rest_concat:e2 {:RESULT = "" + e1 + e2;:}
+// // | concat:e {:RESULT = e;:}
+// | cond_stmt:e1 rest_concat:e2 {:RESULT = " " + e1 + e2;:}
+// | call:e1 rest_concat:e2 {:RESULT = " " + e1 + e2;:}
+// | IDENTIFIER:e1 rest_concat:e2 {:RESULT = " " + e1 + e2;:}
+// | STRING_LITERAL:e1 rest_concat:e2 {:
+//     RESULT = "\"" + e1 + "\"" + e2 + ";";
+// :};
+
+// // condition statement
+// cond_stmt ::= IF LPAREN logical_expr:e1 RPAREN expr:e2 ELSE expr:e3 {:
+//     RESULT = e1 + " ? " + e2 + " : " + e3;
+// :};
+
+// // Logical expression
+// logical_expr ::= expr:e1 PREFIX expr:e2 {:
+//     RESULT = e1 + ".startsWith(" + e2 + ")";
+// :};
+
+// // reverse operator
+// reverse ::= REVERSE expr:e {:
+//     RESULT = "new StringBuilder(" + e + ").reverse().toString()";
+// :};
+
+// // concatenation operator
+// concat ::= expr:e1 PLUS expr:e2 {:RESULT = e1 + "+" + e2; :};
+
+// rest_concat ::= PLUS expr:e {:
+//     RESULT = "+ " + e;
+// :}
+// | /*empty*/ {:
+//     RESULT = "";
+// :};
+
+// // Function call
+// call ::= IDENTIFIER:e1 LPAREN args:e2 RPAREN{:
+//     RESULT = e1 + "(" + e2 + ")";
+// :};
+// // | IDENTIFIER:e1 LPAREN args:e2 RPAREN PLUS expr:e3 {:
+//     // RESULT = e1 + "(" + e2 + ") + " + e3; 
+// // :};
+
+// // Arguments of functions' call (zero or more)
+// args ::= expr:e1 rest_args:e2 {:
+//     RESULT = e1.toString() + e2.toString();
+// :}
+// | /*empty*/ {:
+//     RESULT = ""; 
+// :};
+
+// rest_args ::= COMMA expr:e1 rest_args:e2 {:
+//     RESULT = ", " + e1 + e2;
+// :}
+// | /*empty*/ {:
+//     RESULT = "";
+// :};
+
+
+// // Expression WITHOUT idientifiers
+// expr_no_id ::= reverse:e1 rest_concat:e2 {:RESULT = " " + e1 + e2; :}
+// // | concat_no_id:e {:RESULT = "return " + e + ";";:}
+// | cond_stmt:e1 rest_concat:e2 {:RESULT = " " + e1 + e2; :}
+// // | call_no_id:e {:RESULT = "return " + e + ";";:}
+// | STRING_LITERAL:e1 rest_concat:e2 {: RESULT = "\"" + e1 + "\"" + e2; :};

@@ -1,0 +1,6 @@
+call(x, y, z) {"dasdsa"}
+call(x, y, z) {"dasdsa"}
+call(x, y, z) {"dasdsa"}
+"aaa" + call(x, y, z)
+reverse x + "dsd"
+call(if ("aa" prefix "bb") x+x else call())
