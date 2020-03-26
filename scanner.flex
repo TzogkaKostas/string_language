@@ -58,7 +58,8 @@ LineTerminator = \r|\n|\r\n
 WhiteSpace     = {LineTerminator} | [ \t\f]
 
 Digit = [0-9]
-Letter = [A-Za-z_]
+/* Letter = [A-Za-z_] */
+Letter = [A-Za-z]
 Identifier = {Letter} ({Letter} | {Digit})*
 
 %state STRING
