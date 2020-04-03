@@ -9,14 +9,16 @@ import java_cup.runtime.*;
  */
 parser code {:
     // Connect this parser to a scanner!
-	int flag;
+	boolean flag = false;
 	String params = "";
 	boolean printed = false;
     Scanner s;
     Parser(Scanner s){ this.s=s; }
 :}
 
-init with {: System.out.printf("public class Output {\n");:}
+init with {:
+	System.out.printf("public class Output {\n");
+:}
 
 /* define how to connect to the scanner! */
 scan with {: return s.next_token(); :};
@@ -33,14 +35,10 @@ terminal String STRING_LITERAL;
 terminal COMMA, LBRACKET, RBRACKET;
 
 /*  Non terminals */
-// non terminal main, lines;
-// non terminal main, lines, line, line2, line3, body, end_line, statements;
-// non terminal expr, expr_no_id, cond_stmt, reverse, concat, rest_concat, call, args, rest_args;
-// non terminal logical_expr;
-non terminal main, lines, line, line2, line3, end_line;
+non terminal main, lines, line, line2, line3, end_line, statements;
 non terminal body, rest_concat;
 
-non terminal expr_id, expr_no_id, term_id, term_no_id;
+non terminal expr_no_id, term_no_id;
 non terminal expr, term, reverse, reverse_ops, atom;
 non terminal cond_stmt, logical_expr;
 non terminal args, rest_args;
@@ -51,7 +49,6 @@ non terminal args, rest_args;
 precedence left PREFIX;
 precedence left PLUS;
 precedence left REVERSE;
-// precedence left IDENTIFIER;
 
 
 /**
@@ -62,25 +59,25 @@ start with main;
 
 
 main ::= lines:e {:
-	if (printed == false)
+	if (printed == false){
+		System.out.printf("\tpublic static String _reverse(String s) " +
+			"{return new StringBuilder(s).reverse().toString();}\n");
 	 	System.out.printf("\n\tpublic static void main(String[] args) {\n");
+	}
+
 	System.out.printf("\t}\n}\n");
 :};
 
 
 lines ::= lines:e2 line:e1 {:
-    RESULT = "" + e2 + e1;
-	if (flag == 1) {
-		String str = e1.toString();
-	 	// System.out.printf("str:%s\n", str);
-	 	// System.out.printf("%s\n", RESULT);
-	 	// System.out.printf("%s\n", params);
+	String str = e1.toString();
+
+	if (flag == true) {
 		String name = str.substring(0, str.indexOf('(') );
 		String func_body = str.substring(str.indexOf('{'));
-		// System.out.printf("name:%s\n", name);
-		System.out.printf("\tpublic static String %s(%s) %s\n", name, params, func_body);
-		flag = 0;
+		System.out.printf("\tpublic static String %s(%s) %s\n\n", name, params, func_body);
 		params = "";
+		flag = false;
 	}
 	else {
 		if (printed == false) {
@@ -89,25 +86,27 @@ lines ::= lines:e2 line:e1 {:
 	 		System.out.printf("\n\tpublic static void main(String[] args) {\n");
 			printed = true;
 		}
-		System.out.printf("\t\tSystem.out.println(" + e1 + ");\n", e1);
+		System.out.printf("\t\tSystem.out.println(" + e1 + ");\n", e1);		
 	}
-:}
-| /*empty*/ {:RESULT = ""; :};
 
+:}
+| /*empty*/ {:
+	RESULT = ""; 
+:};
 
 
 line ::= IDENTIFIER:e1 LPAREN line2:e2 {: 
     RESULT = e1 + "(" + e2;
 :}
-| expr_no_id:e {:
-    RESULT = e;
+| expr_no_id:e1 {:
+	RESULT = "" + e1;
 :};
 
 line2 ::= RPAREN body:e {:
-    RESULT = ") " + e;
+    RESULT = ")" + e;
 :}
-| expr_no_id:e1 end_line:e2 {:
-    RESULT = e1.toString() + e2.toString(); 
+| expr_no_id:e1 end_line:e2 rest_concat:e3 {:
+    RESULT = "" + e1 + e2 + e3; 
 :}
 | IDENTIFIER:e1 line3:e2 {:
     RESULT = "" + e1 + e2; 
@@ -118,14 +117,14 @@ line3 ::= COMMA IDENTIFIER:e1 line3:e2 {:
     RESULT = ", " + e1 + e2;
 	params = ", String " + e1 + params;
 :}
-| LPAREN args:e1 RPAREN rest_concat:e2 end_line:e3 {:
-    RESULT = "(" + e1 + ")" + e2 + e3; 
+| LPAREN args:e1 RPAREN rest_concat:e2 end_line:e3 rest_concat:e4 {:
+    RESULT = "(" + e1 + ")" + e2 + e3 + e4;
 :}
-| PLUS expr:e1 end_line:e2{:
-    RESULT = "+" + e1 + e2; 
+| PLUS expr:e1 end_line:e2 rest_concat:e3 {:
+    RESULT = "+" + e1 + e2 + e3; 
 :}
-| expr_no_id:e1 end_line:e2 {:
-    RESULT = e1.toString() + e2.toString(); 
+| expr_no_id:e1 end_line:e2 rest_concat:e3 {:
+    RESULT = "" + e1 + e2 + e3;
 :}
 | RPAREN body:e {:
     RESULT = ")" + e;
@@ -139,13 +138,17 @@ end_line ::= RPAREN {:
     RESULT = ", " + e1 + e2; 
 :};
 
-body ::= LBRACKET expr:e1 RBRACKET {: 
+
+body ::= LBRACKET expr:e1 RBRACKET {:
     RESULT = "{" + "return " + e1 + ";}";
-	flag = 1;
-:} | /*empty*/ {:
-	RESULT = "";
-	flag = 0;
-:};
+	flag = true;
+:} 
+| PLUS expr:e1 {:
+	RESULT = " + " + e1;
+:}
+| /*empty*/ {:RESULT = "";:};
+
+
 
 rest_concat ::= PLUS expr:e {:RESULT = " + " + e;:}
 | /*empty*/ {:RESULT = "";:};
@@ -165,15 +168,6 @@ atom ::= IDENTIFIER:e {:RESULT = e;:}
 
 
 /* reverse operator */
-/*
-reverse ::= REVERSE reverse_ops:e1 atom:e2 {:
-	String str = "new StringBuilder(" + e2 + ").reverse().toString()";
-	for (int i=0; i<(int)e1; i++) {
-		str = "new StringBuilder(" + str + ").reverse().toString()";
-	}
-    RESULT = str;
-:};
-*/
 reverse ::= REVERSE reverse_ops:e1 atom:e2 {:
 	String str = "_reverse(" + e2 + ")";
 	for (int i=0; i<(int)e1; i++) {
@@ -214,12 +208,3 @@ expr_no_id ::= term_no_id:e1 {:RESULT = e1.toString();:}
 term_no_id ::= reverse:e {:RESULT = e;:}
 | STRING_LITERAL:e {:RESULT = "\"" + e + "\"";:}
 | cond_stmt:e {:RESULT = e;:};
-
-/* Expressions without id */
-/*
-expr_id ::= term_id:e1 {:RESULT = e1;:}
-| term_id:e1 PLUS expr:e2 {:RESULT = e1 + "+" + e2;:};
-
-term_id ::= IDENTIFIER:e {:RESULT = e.toString();:}
-| IDENTIFIER:e1 LPAREN args:e2 RPAREN {:RESULT = e1 + "(" + e2 + ")";:};
-*/

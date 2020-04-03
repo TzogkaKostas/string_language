@@ -1,3 +1,0 @@
-call(x) {x+"1"}
-
-call("dasas"+reverse if ("yes2" prefix "yes") "einai" else "mlkia")
